@@ -26,7 +26,7 @@
           <div class="notice-title">【说明：每周更新核心选品数据，请商家优先关注高优先级和最新日期】</div>
           <div class="notice-line">🚀 图片加载需时间，请耐心等待</div>
           <div class="notice-line">📋 单击邀请ID自动复制</div>
-          <div class="notice-line">✅ 点击图片右上框—导出当前结果—可直接导出选中商品信息</div>
+          <div class="notice-line">✅ 点击图片右上框—勾选多个产品—导出当前结果</div>
           <div class="notice-line">💰 在卖家系统-机会商品-普通爆款搜索【邀请ID】进行提报</div>
         </div>
       </section>
@@ -36,11 +36,11 @@
   <main class="container">
     <section class="toolbar-panel">
       <div class="toolbar-grid">
-        <input id="keyword" type="text" placeholder="搜索标题/ID..." />
+        <input id="keyword" type="text" placeholder="搜索标题/ID/邀请码..." />
         <select id="category1"><option value="">二级类目(全部)</option></select>
         <select id="category2"><option value="">三级类目(全部)</option></select>
         <select id="priority">
-          <option value="">高优先级/中优先级/低优先级(全部)</option>
+          <option value="">优先级(全部)</option>
           <option value="高优先级">高优先级</option>
           <option value="中优先级">中优先级</option>
           <option value="低优先级">低优先级</option>
@@ -59,7 +59,7 @@
           <button id="resetBtn" class="action-btn ghost">重置筛选</button>
           <button id="exportBtn" class="action-btn">导出当前结果</button>
         </div>
-        <div class="toolbar-right">已筛选：<span id="filteredCount">0</span> 款</div>
+        <div class="toolbar-right" id="filteredCount"></div>
       </div>
     </section>
 
@@ -70,7 +70,3 @@
   </main>
 
   <div id="toast" class="toast hidden"></div>
-
-  <script src="./app.js"></script>
-</body>
-</html>
