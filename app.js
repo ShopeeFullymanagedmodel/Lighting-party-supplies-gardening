@@ -147,7 +147,7 @@ function applyFilters() {
 
 /**
  * 核心逻辑修改：语法修正
- * 预期效果：(已筛选：1370款——已勾选：1款)
+ * 预期效果：1370款——已勾选：1
  */
 function updateCountDisplay() {
   const checkedCount = state.selectedIds.size;
