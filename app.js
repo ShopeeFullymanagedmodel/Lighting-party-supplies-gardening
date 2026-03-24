@@ -1,9 +1,5 @@
 /**
- * 灯具派对用品园艺专用版 app.js (全功能终极版)
- * 1. 记忆功能：搜索或换页后，勾选状态不会丢失
- * 2. 计数功能：修复重复“款”字，同步显示筛选与勾选数量
- * 3. 筛选功能：精确类目匹配，解决“服饰”搜出“雨伞”的问题
- * 4. 导出逻辑：优先导出勾选项，无勾选则导出当前筛选结果
+ * 灯具派对用品园艺专用版 app.js (语法修正与记忆勾选终极版)
  */
 
 const state = { 
@@ -30,7 +26,6 @@ const els = {
 
 async function init() {
   try {
-    // 加上时间戳防止浏览器缓存 CSV 文件
     const response = await fetch('./data.csv?v=' + Date.now());
     if (!response.ok) throw new Error('找不到 data.csv 文件');
     const csvText = await response.text();
@@ -56,12 +51,9 @@ function parseCSV(text) {
 }
 
 function bindEvents() {
-  // 关键词和价格输入监听
   [els.keyword, els.minPrice, els.maxPrice].forEach(el => {
     if(el) ['input','change'].forEach(evt => el.addEventListener(evt, applyFilters));
   });
-  
-  // 下拉框选择监听
   [els.category1, els.category2, els.priority, els.sortBy].forEach(el => {
     if(el) el.addEventListener('change', () => {
       if (el === els.category1) refillCategory2Options();
@@ -69,32 +61,26 @@ function bindEvents() {
     });
   });
   
-  // 重置按钮
   els.resetBtn?.addEventListener('click', () => {
     els.keyword.value = ''; els.category1.value = ''; els.category2.value = '';
     els.priority.value = ''; els.minPrice.value = ''; els.maxPrice.value = '';
     els.sortBy.value = 'default';
-    state.selectedIds.clear(); // 重置时清空勾选
+    state.selectedIds.clear(); 
     refillCategory2Options();
     applyFilters();
   });
 
-  // 导出按钮逻辑
   els.exportBtn?.addEventListener('click', () => {
     let dataToExport = [];
     if (state.selectedIds.size > 0) {
-      // 如果有勾选，只导出选中的 ID
       dataToExport = state.allProducts.filter(item => state.selectedIds.has(String(item.modelId || item.itemid)));
     } else {
-      // 否则导出当前页面筛选出的全部
       dataToExport = state.filteredProducts;
     }
-
     if (dataToExport.length === 0) {
       showToast("没有可导出的数据");
       return;
     }
-
     const csv = Papa.unparse(dataToExport);
     const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -130,9 +116,6 @@ function refillCategory2Options() {
   });
 }
 
-/**
- * 核心筛选逻辑：精确类目匹配
- */
 function applyFilters() {
   const keyword = (els.keyword.value || '').trim().toLowerCase();
   const category1 = els.category1.value;
@@ -143,23 +126,17 @@ function applyFilters() {
   const sortBy = els.sortBy.value;
 
   let list = state.allProducts.filter(item => {
-    // 模糊搜索范围：标题、IVCN、ID
     const searchText = [item.title, item.inviteId, item.modelId, item.itemid].join(' ').toLowerCase();
     const okKeyword = !keyword || searchText.includes(keyword);
-    
-    // 精确类目匹配：解决“服饰”筛选出“配件”的问题
     const okCat1 = !category1 || String(item.l1) === category1;
     const okCat2 = !category2 || String(item.l2) === category2;
-    
     const okPriority = !priority || (item['提品优先级'] || '').includes(priority);
     const price = parseFloat(item.price || 0);
     const okMin = Number.isNaN(minPrice) || price >= minPrice;
     const okMax = Number.isNaN(maxPrice) || price <= maxPrice;
-    
     return okKeyword && okCat1 && okCat2 && okPriority && okMin && okMax;
   });
 
-  // 排序
   if (sortBy === 'priceAsc') list.sort((a,b) => parseFloat(a.price || 0) - parseFloat(b.price || 0));
   else if (sortBy === 'priceDesc') list.sort((a,b) => parseFloat(b.price || 0) - parseFloat(a.price || 0));
   else if (sortBy === 'dateDesc') list.sort((a,b) => String(b['update date'] || '').localeCompare(String(a['update date'] || '')));
@@ -169,26 +146,26 @@ function applyFilters() {
 }
 
 /**
- * 更新统计文字：已筛选 vs 已勾选
+ * 核心逻辑修改：语法修正
+ * 预期效果：(已筛选：1370款——已勾选：1款)
  */
 function updateCountDisplay() {
   const checkedCount = state.selectedIds.size;
   const filteredCount = state.filteredProducts.length;
+  
   if (els.filteredCount) {
     if (checkedCount > 0) {
-      // 修正了重复的“款”字
-      els.filteredCount.innerHTML = `已筛选: ${filteredCount} | <span style="color: #0b57d7; font-weight: bold;">已勾选: ${checkedCount}</span> 款`;
+      // 严格按照用户要求的语法格式
+      els.filteredCount.innerHTML = `(已筛选：${filteredCount}款——<span style="color: #0b57d7; font-weight: bold;">已勾选：${checkedCount}款</span>)`;
     } else {
-      els.filteredCount.textContent = `已筛选: ${filteredCount} 款`;
+      // 未勾选时的简洁格式
+      els.filteredCount.textContent = `(已筛选：${filteredCount}款)`;
     }
   }
 }
 
-/**
- * 渲染产品卡片
- */
 function renderCards() {
-  // 每次渲染都先同步计数状态
+  // 渲染时首先根据 state 更新计数文字
   updateCountDisplay();
 
   if (!state.filteredProducts.length) {
@@ -203,8 +180,6 @@ function renderCards() {
     const pClass = pVal.includes('高') ? 'p0' : 'p1';
     const placeholder = "https://images.placeholders.dev/?width=200&height=200&text=无图片&fontSize=24";
     const itemId = String(item.modelId || item.itemid);
-    
-    // 检查是否已经在勾选名单中 (Set)
     const isChecked = state.selectedIds.has(itemId) ? 'checked' : '';
 
     return `
@@ -240,7 +215,6 @@ function renderCards() {
     `;
   }).join('');
 
-  // 绑定复选框点击事件
   document.querySelectorAll('.select-item').forEach(checkbox => {
     checkbox.addEventListener('change', (e) => {
       const id = e.target.getAttribute('data-id');
@@ -249,11 +223,10 @@ function renderCards() {
       } else {
         state.selectedIds.delete(id);
       }
-      updateCountDisplay(); // 勾选动作立即刷新数字
+      updateCountDisplay(); 
     });
   });
 
-  // 绑定邀请码点击复制
   document.querySelectorAll('.invitation-box').forEach(el => {
     el.onclick = async () => {
       const val = el.getAttribute('data-copy');
