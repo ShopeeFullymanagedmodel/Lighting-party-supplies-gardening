@@ -1,11 +1,15 @@
 /**
- * 灯具派对用品园艺专用版 app.js (全功能增强版)
- * 1. 布局：IVCN独占/链接并排/ID与日期并排
- * 2. 筛选：精确匹配，解决类目冲突
- * 3. 功能：支持勾选特定产品进行导出，未勾选则导出全部结果
+ * 灯具派对用品园艺专用版 app.js (增强记忆版)
+ * 1. 记忆功能：搜索或换页后，之前勾选的产品不会消失
+ * 2. 计数功能：同步显示已筛选数量和已勾选数量
+ * 3. 筛选功能：精确类目匹配 + 模糊关键词搜索
  */
 
-const state = { allProducts: [], filteredProducts: [] };
+const state = { 
+  allProducts: [], 
+  filteredProducts: [],
+  selectedIds: new Set() // 用于存储已勾选产品的唯一 ID (modelId 或 itemid)
+};
 
 const els = {
   keyword: document.getElementById('keyword'),
@@ -35,7 +39,6 @@ async function init() {
     fillCategory1Options();
     bindEvents();
     applyFilters();
-    console.log("✅ 加载成功，有效条数：" + products.length);
   } catch (error) {
     console.error("❌ 加载失败:", error);
     if(els.cardGrid) els.cardGrid.innerHTML = `<div style="color:red;padding:20px;text-align:center;">加载失败: ${error.message}</div>`;
@@ -65,19 +68,18 @@ function bindEvents() {
     els.keyword.value = ''; els.category1.value = ''; els.category2.value = '';
     els.priority.value = ''; els.minPrice.value = ''; els.maxPrice.value = '';
     els.sortBy.value = 'default';
+    state.selectedIds.clear(); // 重置时清除所有勾选
     refillCategory2Options();
     applyFilters();
   });
 
-  // --- 导出逻辑优化 ---
   els.exportBtn?.addEventListener('click', () => {
-    const checkedBoxes = document.querySelectorAll('.select-item:checked');
     let dataToExport = [];
-    
-    if (checkedBoxes.length > 0) {
-      const selectedIds = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-id'));
-      dataToExport = state.allProducts.filter(item => selectedIds.includes(String(item.modelId || item.itemid)));
+    if (state.selectedIds.size > 0) {
+      // 导出勾选的
+      dataToExport = state.allProducts.filter(item => state.selectedIds.has(String(item.modelId || item.itemid)));
     } else {
+      // 导出当前筛选的
       dataToExport = state.filteredProducts;
     }
 
@@ -92,7 +94,7 @@ function bindEvents() {
     link.href = URL.createObjectURL(blob);
     link.download = `export_${new Date().getTime()}.csv`;
     link.click();
-    showToast(`已导出 ${dataToExport.length} 条数据`);
+    showToast(`已成功导出 ${dataToExport.length} 条数据`);
   });
 }
 
@@ -148,10 +150,22 @@ function applyFilters() {
 
   state.filteredProducts = list;
   renderCards();
+  updateCountDisplay(); 
+}
+
+function updateCountDisplay() {
+  const checkedCount = state.selectedIds.size;
+  const filteredCount = state.filteredProducts.length;
+  if (els.filteredCount) {
+    if (checkedCount > 0) {
+      els.filteredCount.innerHTML = `已筛选: ${filteredCount} 款 | <span style="color: #0b57d7; font-weight: bold;">已勾选: ${checkedCount} 款</span>`;
+    } else {
+      els.filteredCount.textContent = `已筛选: ${filteredCount} 款`;
+    }
+  }
 }
 
 function renderCards() {
-  if(els.filteredCount) els.filteredCount.textContent = state.filteredProducts.length;
   if (!state.filteredProducts.length) {
     els.cardGrid.innerHTML = '';
     els.emptyState?.classList.remove('hidden');
@@ -163,12 +177,15 @@ function renderCards() {
     const pVal = item['提品优先级'] || '-';
     const pClass = pVal.includes('高') ? 'p0' : 'p1';
     const placeholder = "https://images.placeholders.dev/?width=200&height=200&text=无图片&fontSize=24";
-    const itemId = item.modelId || item.itemid;
+    const itemId = String(item.modelId || item.itemid);
+    
+    // 关键点：检查当前 ID 是否在 Set 中，决定是否勾选
+    const isChecked = state.selectedIds.has(itemId) ? 'checked' : '';
 
     return `
       <article class="card">
         <div class="card-checkbox">
-          <input type="checkbox" class="select-item" data-id="${escapeHtml(itemId)}">
+          <input type="checkbox" class="select-item" data-id="${escapeHtml(itemId)}" ${isChecked}>
         </div>
         <div class="card-top">
           <span class="priority-badge ${pClass}">${escapeHtml(pVal)}</span>
@@ -186,8 +203,8 @@ function renderCards() {
              <div class="invitation-box big-row" data-copy="${escapeHtml(item.inviteId || '')}">${escapeHtml(item.inviteId || '')}</div>
           </div>
           <div class="links-row">
-            ${item.link ? `<a class="link-btn link-origin" href="${escapeHtml(item.link)}" target="_blank">原品链接</a>` : ''}
-            ${item.final_1688_link ? `<a class="link-btn link-1688" href="${escapeHtml(item.final_1688_link)}" target="_blank">1688链接</a>` : ''}
+            ${item.link ? `<a class="link-btn link-origin" href="${escapeHtml(item.link)}" target="_blank">原品</a>` : ''}
+            ${item.final_1688_link ? `<a class="link-btn link-1688" href="${escapeHtml(item.final_1688_link)}" target="_blank">1688</a>` : ''}
           </div>
           <div class="footer-row">
             <div class="mini-id">ID: ${escapeHtml(item.modelId || '')}</div>
@@ -198,11 +215,25 @@ function renderCards() {
     `;
   }).join('');
 
+  // 绑定 Checkbox 事件：更新 Set 集合
+  document.querySelectorAll('.select-item').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-id');
+      if (e.target.checked) {
+        state.selectedIds.add(id);
+      } else {
+        state.selectedIds.delete(id);
+      }
+      updateCountDisplay();
+    });
+  });
+
+  // 复制功能保持
   document.querySelectorAll('.invitation-box').forEach(el => {
     el.onclick = async () => {
       const val = el.getAttribute('data-copy');
       if (val) {
-        try { await navigator.clipboard.writeText(val); showToast(`已复制邀请码：${val}`); }
+        try { await navigator.clipboard.writeText(val); showToast(`已复制：${val}`); }
         catch(e) { showToast('复制失败'); }
       }
     };
