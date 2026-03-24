@@ -1,0 +1,237 @@
+/* 基础重置 */
+*{box-sizing:border-box}
+:root{
+  --bg:#e9e9ec;
+  --white:#ffffff;
+  --text:#24323d;
+  --sub:#8a9099;
+  --line:#e7e9ee;
+  --hero:#f34f27;
+  --hero-soft:#f06f55;
+  --price:#ef5b34;
+  --green:#0a6a2c;
+  --green-bg:#d2e8d4;
+  --cyan:#0d6079;
+  --cyan-bg:#d9edf2;
+  --shadow:0 6px 18px rgba(20,20,20,.05);
+}
+
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+}
+
+.container{
+  max-width:1280px;
+  margin:0 auto;
+  padding:0 14px;
+}
+
+/* 顶部 Hero 区域 */
+.hero-wrap{padding:16px 0 10px}
+.hero{
+  background:var(--hero);
+  border-radius:0 0 12px 12px;
+  padding:24px 24px 22px;
+  box-shadow:var(--shadow);
+}
+.hero-title-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:18px;
+}
+.hero-title-box h1{
+  margin:0;
+  color:#fff;
+  font-size:28px;
+  line-height:1.15;
+  font-weight:900;
+}
+.hero-notice{
+  background:var(--hero-soft);
+  border-radius:6px;
+  padding:14px 18px;
+  color:#fff;
+}
+
+/* 工具栏面板 */
+.toolbar-panel{
+  position: sticky;
+  top: 8px;
+  z-index: 1000;
+  margin:14px 0 22px;
+  background:#f3f3f4;
+  border:1px solid #e3e5e8;
+  border-radius:14px;
+  padding:18px 18px 12px;
+  box-shadow:0 8px 20px rgba(20,20,20,.08);
+}
+.toolbar-grid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr .8fr 1fr 1fr .7fr;
+  gap:12px;
+}
+.toolbar-grid input, .toolbar-grid select{
+  width:100%;
+  height:40px;
+  border:1px solid #d0d4da;
+  border-radius:6px;
+  padding:0 12px;
+  background:#fff;
+  font-size:14px;
+}
+.toolbar-bottom{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:14px;
+}
+.action-btn{
+  height:36px;
+  border:none;
+  border-radius:8px;
+  padding:0 20px;
+  background:#f35a31;
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+.action-btn.ghost{ background:#e9ecef; color:#2c3943; margin-left:8px;}
+.toolbar-right{ color:var(--price); font-size:18px; font-weight:900; }
+
+/* 卡片网格布局 */
+.card-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:22px;
+}
+.card{
+  background:var(--white);
+  border:1px solid #e8eaee;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .16s ease;
+}
+.card:hover{ transform:translateY(-3px); }
+
+/* 卡片上半部分：图片 */
+.card-top{
+  position:relative;
+  height:258px;
+  border-bottom:1px solid var(--line);
+}
+.priority-badge{
+  position:absolute;
+  top:10px; left:10px; z-index:2;
+  padding:4px 10px;
+  border-radius:4px;
+  font-size:13px;
+  font-weight:900;
+}
+.priority-badge.p0{background:var(--green-bg);color:var(--green)}
+.priority-badge.p1{background:var(--cyan-bg);color:var(--cyan)}
+
+.card-image-wrap{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:5px; }
+.card-image{ max-width:100%; max-height:100%; object-fit:contain; }
+
+/* 卡片下半部分：详情内容 */
+.card-bottom{ padding:15px; }
+
+.title{
+  min-height:48px;
+  font-size:16px;
+  font-weight:900;
+  margin-bottom:10px;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.price-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.price{ color:var(--price); font-size:22px; font-weight:900; }
+.spec-name{ color:#888; font-size:13px; text-align:right; max-width:60%; }
+
+/* --- 核心优化点 --- */
+
+/* 1. IVCN 邀请码大行 */
+.invitation-row { margin: 10px 0; }
+.invitation-box.big-row {
+  width:100%;
+  background:#f0f7ff;
+  border:2px dashed #007bff;
+  color:#007bff;
+  font-weight:bold;
+  font-size:15px;
+  padding:10px;
+  text-align:center;
+  border-radius:6px;
+  cursor:pointer;
+  transition: background 0.2s;
+}
+.invitation-box.big-row:hover { background: #e1f0ff; }
+
+/* 2. 链接并排展示 */
+.links-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.link-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  border-radius: 6px;
+  color: #fff;
+}
+.link-origin { background: #555; } /* 原品灰色 */
+.link-1688 { background: #ff5000; } /* 1688橙色 */
+
+/* 3. 页脚：ID与日期并排且缩小 */
+.footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+.mini-id {
+  font-size: 10px;
+  color: #bbb;
+}
+.update-date {
+  font-size: 11px;
+  color: #777;
+  font-weight: bold;
+}
+
+/* 提示与响应式 */
+.toast{
+  position:fixed; right:18px; bottom:18px;
+  background:#111827; color:#fff; padding:12px 14px;
+  border-radius:10px; z-index:1001;
+}
+.hidden{display:none!important}
+
+@media (max-width:1200px){ .card-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:900px){ 
+  .card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .toolbar-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media (max-width:600px){
+  .card-grid{grid-template-columns:1fr}
+  .toolbar-grid{grid-template-columns:1fr}
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>运动户外热销原品清单</title>
+  
+  <meta name="referrer" content="no-referrer" />
+  
+  <link rel="stylesheet" href="./styles.css" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+  <header class="hero-wrap">
+    <div class="container">
+      <section class="hero">
+        <div class="hero-title-row">
+          <div class="hero-icon">🏍️</div>
+          <div class="hero-title-box">
+            <h1 id="siteTitle">运动户外热销原品清单</h1>
+          </div>
+        </div>
+
+        <div class="hero-notice">
+          <div class="notice-title">【说明：每日更新核心选品数据，请买手优先关注P0等级及最新日期。】</div>
+          <div class="notice-line">🚀 图片加载需时间，请耐心等待</div>
+          <div class="notice-line">📋 单击邀请ID自动复制</div>
+          <div class="notice-line">✅ 邀请ID左边为ID下model个数，在搜索框搜索邀请ID，可提报所有model，流量翻倍</div>
+          <div class="notice-line">💡 在卖家系统-机会商品-普通爆款搜索【邀请ID】进行提报</div>
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="toolbar-panel">
+      <div class="toolbar-grid">
+        <input id="keyword" type="text" placeholder="搜索标题/ID..." />
+        <select id="category1"><option value="">二级类目(全部)</option></select>
+        <select id="category2"><option value="">三级类目(全部)</option></select>
+        <select id="priority">
+          <option value="">高优先级/中优先级/低优先级(全部)</option>
+          <option value="高优先级">高优先级</option>
+          <option value="中优先级">中优先级</option>
+          <option value="低优先级">低优先级</option>
+        </select>
+        <input id="minPrice" type="number" placeholder="最低价" />
+        <input id="maxPrice" type="number" placeholder="最高价" />
+        <select id="sortBy">
+          <option value="default">默认排序</option>
+          <option value="dateDesc">最新发布</option>
+          <option value="priceAsc">价格升序</option>
+          <option value="priceDesc">价格降序</option>
+        </select>
+      </div>
+      <div class="toolbar-bottom">
+        <div class="toolbar-left">
+          <button id="resetBtn" class="action-btn ghost">重置筛选</button>
+          <button id="exportBtn" class="action-btn">导出当前结果</button>
+        </div>
+        <div class="toolbar-right">已筛选：<span id="filteredCount">0</span> 款</div>
+      </div>
+    </section>
+
+    <section>
+      <div id="cardGrid" class="card-grid"></div>
+      <div id="emptyState" class="empty hidden">没有符合条件的商品。</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
