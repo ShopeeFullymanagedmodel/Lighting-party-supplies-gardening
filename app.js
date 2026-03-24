@@ -1,5 +1,5 @@
 /**
- * 运动户外专用版 app.js - 复活修正版
+ * 运动户外专用版 app.js - 增强诊断版
  */
 
 const state = { 
@@ -10,7 +10,6 @@ const state = {
 
 const els = {};
 
-// 初始化所有 DOM 元素
 function initElements() {
   const ids = [
     'keyword', 'category1', 'category2', 'priority', 
@@ -25,40 +24,53 @@ function initElements() {
 async function init() {
   initElements();
   try {
-    // 强制刷新数据
-    const response = await fetch('./data.csv?v=' + Date.now());
-    if (!response.ok) throw new Error('无法加载 CSV 数据');
+    // 【关键检查点】确保文件名是 data.csv 且在根目录
+    const fileName = './data.csv'; 
+    const response = await fetch(fileName + '?v=' + Date.now());
+    
+    if (!response.ok) {
+        throw new Error(`找不到文件：${fileName} (状态码: ${response.status})。请检查文件名是否全小写且在根目录。`);
+    }
+
     const csvText = await response.text();
     
     if (window.Papa) {
-      const result = Papa.parse(csvText, { header: true, skipEmptyLines: 'greedy' });
-      state.allProducts = result.data.filter(item => item.title && item.price);
-      
-      fillCategory1Options();
-      bindEvents();
-      applyFilters();
+      const result = Papa.parse(csvText, { 
+        header: true, 
+        skipEmptyLines: 'greedy',
+        complete: function(results) {
+            state.allProducts = results.data.filter(item => item.title && item.price);
+            if(state.allProducts.length === 0) {
+                if(els.cardGrid) els.cardGrid.innerHTML = '<div style="padding:20px;text-align:center;color:orange;">数据读取成功，但内容为空，请检查CSV表头是否包含 title 和 price</div>';
+            }
+            fillCategory1Options();
+            bindEvents();
+            applyFilters();
+        }
+      });
     } else {
-      console.error("PapaParse 未加载，请检查 index.html 是否引入了该库");
+      throw new Error("解析库 PapaParse 加载失败，请检查联网状态");
     }
   } catch (error) {
     console.error("初始化失败:", error);
+    if(els.cardGrid) {
+        els.cardGrid.innerHTML = `<div style="padding:40px;text-align:center;color:red;font-weight:bold;">
+            ❌ 加载失败<br><br>
+            原因：${error.message}<br><br>
+            <small>请确保 GitHub 仓库中有一个名为 data.csv 的文件</small>
+        </div>`;
+    }
   }
 }
 
+// --- 以下功能函数保持不变 ---
+
 function bindEvents() {
-  const filterInputs = [els.keyword, els.minPrice, els.maxPrice];
-  filterInputs.forEach(el => {
-    el?.addEventListener('input', applyFilters);
-  });
-
-  const filterSelects = [els.category1, els.category2, els.priority, els.sortBy];
-  filterSelects.forEach(el => {
-    el?.addEventListener('change', () => {
-      if (el === els.category1) refillCategory2Options();
-      applyFilters();
-    });
-  });
-
+  [els.keyword, els.minPrice, els.maxPrice].forEach(el => el?.addEventListener('input', applyFilters));
+  [els.category1, els.category2, els.priority, els.sortBy].forEach(el => el?.addEventListener('change', () => {
+    if (el === els.category1) refillCategory2Options();
+    applyFilters();
+  }));
   els.resetBtn?.addEventListener('click', () => {
     if(els.keyword) els.keyword.value = '';
     if(els.category1) els.category1.value = '';
@@ -71,12 +83,10 @@ function bindEvents() {
     refillCategory2Options();
     applyFilters();
   });
-
   els.exportBtn?.addEventListener('click', () => {
     let data = state.selectedIds.size > 0 
       ? state.allProducts.filter(item => state.selectedIds.has(String(item.modelId || item.itemid)))
       : state.filteredProducts;
-    
     if (!data.length) return showToast("没有数据可导出");
     const csv = Papa.unparse(data);
     const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -84,7 +94,7 @@ function bindEvents() {
     link.href = URL.createObjectURL(blob);
     link.download = `export_${Date.now()}.csv`;
     link.click();
-    showToast(`成功导出 ${data.length} 条数据`);
+    showToast(`导出成功`);
   });
 }
 
@@ -135,7 +145,6 @@ function updateCountDisplay() {
   if (!els.filteredCount) return;
   const checkedCount = state.selectedIds.size;
   const filteredCount = state.filteredProducts.length;
-  
   let html = `已筛选：${filteredCount}款`;
   if (checkedCount > 0) {
     html += `——<span style="color: #0b57d7; font-weight: bold;">已勾选：${checkedCount}款</span>`;
@@ -146,28 +155,22 @@ function updateCountDisplay() {
 function renderCards() {
   updateCountDisplay();
   if (!els.cardGrid) return;
-
   if (!state.filteredProducts.length) {
     els.cardGrid.innerHTML = '';
     els.emptyState?.classList.remove('hidden');
     return;
   }
   els.emptyState?.classList.add('hidden');
-
   els.cardGrid.innerHTML = state.filteredProducts.map(item => {
     const id = String(item.modelId || item.itemid);
     const checked = state.selectedIds.has(id) ? 'checked' : '';
     const pVal = item['提品优先级'] || '-';
-    const pClass = pVal.includes('高') ? 'p0' : 'p1';
-    
     return `
       <article class="card">
         <div class="card-checkbox"><input type="checkbox" class="select-item" data-id="${escapeHtml(id)}" ${checked}></div>
         <div class="card-top">
-          <span class="priority-badge ${pClass}">${escapeHtml(pVal)}</span>
-          <div class="card-image-wrap">
-            <img class="card-image" src="${escapeHtml(item.imgUrl)}" onerror="this.src='https://images.placeholders.dev/?width=200&height=200&text=无图片';">
-          </div>
+          <span class="priority-badge ${pVal.includes('高')?'p0':'p1'}">${escapeHtml(pVal)}</span>
+          <div class="card-image-wrap"><img class="card-image" src="${escapeHtml(item.imgUrl)}" onerror="this.src='https://images.placeholders.dev/?width=200&height=200&text=无图片';"></div>
         </div>
         <div class="card-bottom">
           <div class="title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
@@ -175,9 +178,7 @@ function renderCards() {
             <div class="price">¥${parseFloat(item.price || 0).toFixed(2)}</div>
             <div class="spec-name">${escapeHtml(item.variant || '')}</div>
           </div>
-          <div class="invitation-row">
-            <div class="invitation-box" data-copy="${escapeHtml(item.inviteId || '')}">${escapeHtml(item.inviteId || '')}</div>
-          </div>
+          <div class="invitation-row"><div class="invitation-box" data-copy="${escapeHtml(item.inviteId||'')}">${escapeHtml(item.inviteId||'')}</div></div>
           <div class="links-row">
             ${item.link ? `<a class="link-btn link-origin" href="${escapeHtml(item.link)}" target="_blank">原品</a>` : ''}
             ${item.final_1688_link ? `<a class="link-btn link-1688" href="${escapeHtml(item.final_1688_link)}" target="_blank">1688</a>` : ''}
@@ -191,40 +192,29 @@ function renderCards() {
     `;
   }).join('');
 
-  // 绑定点击事件
   document.querySelectorAll('.select-item').forEach(cb => {
     cb.onclick = (e) => {
       const id = e.target.getAttribute('data-id');
-      if (e.target.checked) state.selectedIds.add(id);
-      else state.selectedIds.delete(id);
+      e.target.checked ? state.selectedIds.add(id) : state.selectedIds.delete(id);
       updateCountDisplay();
     };
   });
-
   document.querySelectorAll('.invitation-box').forEach(el => {
     el.onclick = async () => {
       const val = el.getAttribute('data-copy');
-      try {
-        await navigator.clipboard.writeText(val);
-        showToast("已复制：" + val);
-      } catch (err) {
-        showToast("复制失败");
-      }
+      try { await navigator.clipboard.writeText(val); showToast("已复制：" + val); } catch (e) {}
     };
   });
 }
 
-// 工具函数
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 }
 
 function showToast(msg) {
   if (!els.toast) return;
-  els.toast.textContent = msg;
-  els.toast.classList.remove('hidden');
+  els.toast.textContent = msg; els.toast.classList.remove('hidden');
   setTimeout(() => els.toast.classList.add('hidden'), 2000);
 }
 
-// 启动程序
 window.addEventListener('DOMContentLoaded', init);
