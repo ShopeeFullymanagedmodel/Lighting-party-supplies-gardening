@@ -1,5 +1,6 @@
 /**
- * 运动户外/灯具 专用逻辑脚本
+ * 运动户外版 - 最终修复版
+ * 重点：对接 variant 列，统一 data.csv 路径
  */
 const state = { 
   allProducts: [], filteredProducts: [], selectedIds: new Set() 
@@ -23,8 +24,10 @@ const els = {
 
 async function init() {
   try {
-    const response = await fetch('./data.csv?v=' + Date.now());
-    if (!response.ok) throw new Error("无法读取 data.csv");
+    // 确保这里的路径与 GitHub 仓库根目录的文件名完全一致
+    const response = await fetch('./data.csv?v=' + Date.now()); 
+    if (!response.ok) throw new Error("无法读取 data.csv，请确认文件名大小写是否一致");
+    
     const csvText = await response.text();
     const result = Papa.parse(csvText, { header: true, skipEmptyLines: 'greedy' });
     state.allProducts = result.data.filter(item => item.title || item.inviteId);
@@ -34,7 +37,7 @@ async function init() {
     applyFilters();
   } catch (e) {
     console.error(e);
-    if(els.cardGrid) els.cardGrid.innerHTML = `<div class="empty">数据加载失败，请检查 data.csv</div>`;
+    if(els.cardGrid) els.cardGrid.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
   }
 }
 
@@ -64,6 +67,9 @@ function renderCards() {
     const pVal = item['提品优先级'] || '-';
     const pClass = pVal.includes('高') ? 'p0' : 'p1';
 
+    // 【核心修复】读取 CSV 中对应的 variant 列
+    const spec = item['variant'] || '标准规格';
+
     return `
       <article class="card">
         <div class="card-checkbox">
@@ -77,13 +83,20 @@ function renderCards() {
         </div>
         <div class="card-bottom">
           <div class="title" title="${item.title}">${item.title}</div>
-          <div class="price">¥${parseFloat(item.price || 0).toFixed(2)}</div>
+          
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 8px;">
+            <div class="price">¥${parseFloat(item.price || 0).toFixed(2)}</div>
+            <div style="font-size: 11px; color: #8a9099; background: #f0f0f2; padding: 2px 8px; border-radius: 4px; max-width: 55%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${spec}">
+              ${spec}
+            </div>
+          </div>
+
           <div class="invitation-row">
             <div class="invitation-box" onclick="copyVal('${item.inviteId}')">${item.inviteId || '无'}</div>
           </div>
           <div class="links-row">
-            <a class="link-btn link-origin" href="${item.link}" target="_blank">原品链接</a>
-            <a class="link-btn link-1688" href="${item.final_1688_link}" target="_blank">1688链接</a>
+            <a class="link-btn link-origin" style="padding: 8px 4px; font-size: 12px;" href="${item.link}" target="_blank">原品链接</a>
+            <a class="link-btn link-1688" style="padding: 8px 4px; font-size: 12px;" href="${item.final_1688_link}" target="_blank">1688链接</a>
           </div>
           <div class="footer-row">
             <div>ID: ${item.modelId || '-'}</div>
@@ -121,13 +134,13 @@ function bindEvents() {
 }
 
 function applyFilters() {
-  const kw = els.keyword.value.trim().toLowerCase();
-  const c1 = els.category1.value;
-  const c2 = els.category2.value;
-  const pr = els.priority.value;
-  const min = parseFloat(els.minPrice.value);
-  const max = parseFloat(els.maxPrice.value);
-  const sort = els.sortBy.value;
+  const kw = els.keyword?.value.trim().toLowerCase() || '';
+  const c1 = els.category1?.value || '';
+  const c2 = els.category2?.value || '';
+  const pr = els.priority?.value || '';
+  const min = parseFloat(els.minPrice?.value);
+  const max = parseFloat(els.maxPrice?.value);
+  const sort = els.sortBy?.value || 'default';
 
   state.filteredProducts = state.allProducts.filter(item => {
     const text = [item.title, item.inviteId, item.modelId].join(' ').toLowerCase();
@@ -143,22 +156,24 @@ function applyFilters() {
 
 function fillCategory1Options() {
   const values = [...new Set(state.allProducts.map(x => x.l1).filter(Boolean))].sort();
-  els.category1.innerHTML = '<option value="">二级类目(全部)</option>' + values.map(v => `<option value="${v}">${v}</option>`).join('');
+  if(els.category1) els.category1.innerHTML = '<option value="">二级类目(全部)</option>' + values.map(v => `<option value="${v}">${v}</option>`).join('');
   refillCategory2Options();
 }
 
 function refillCategory2Options() {
-  const selected = els.category1.value;
+  const selected = els.category1?.value;
   const source = selected ? state.allProducts.filter(x => x.l1 === selected) : state.allProducts;
   const values = [...new Set(source.map(x => x.l2).filter(Boolean))].sort();
-  els.category2.innerHTML = '<option value="">三级类目(全部)</option>' + values.map(v => `<option value="${v}">${v}</option>`).join('');
+  if(els.category2) els.category2.innerHTML = '<option value="">三级类目(全部)</option>' + values.map(v => `<option value="${v}">${v}</option>`).join('');
 }
 
 window.copyVal = (v) => {
   navigator.clipboard.writeText(v).then(() => {
-    els.toast.textContent = "已复制: " + v;
-    els.toast.classList.remove('hidden');
-    setTimeout(() => els.toast.classList.add('hidden'), 2000);
+    if(els.toast) {
+      els.toast.textContent = "已复制: " + v;
+      els.toast.classList.remove('hidden');
+      setTimeout(() => els.toast.classList.add('hidden'), 2000);
+    }
   });
 };
 
