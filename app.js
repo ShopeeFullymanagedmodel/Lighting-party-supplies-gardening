@@ -86,7 +86,8 @@ function renderCards() {
           
           <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; gap: 8px;">
             <div class="price">¥${parseFloat(item.price || 0).toFixed(2)}</div>
-            <div style="font-size: 11px; color: #8a9099; background: #f0f0f2; padding: 2px 8px; border-radius: 4px; max-width: 55%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${spec}">
+            
+            <div style="font-size: 12px; color: #888; font-weight: 400; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${spec}">
               ${spec}
             </div>
           </div>
