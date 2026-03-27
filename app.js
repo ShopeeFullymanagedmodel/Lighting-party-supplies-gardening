@@ -49,7 +49,7 @@ function updateCountDisplay() {
   if (checked > 0) {
     html += ` —— <span style="color: #0b57d7; font-weight: 900;">已勾选：${checked}款</span>`;
   }
-  els.filteredCount.innerHTML = `(${html})`;
+  els.filteredCount.innerHTML = `${html}`;
 }
 
 function renderCards() {
